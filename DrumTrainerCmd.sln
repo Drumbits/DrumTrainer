@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrumTrainerCmd", "DrumTrainerCmd\DrumTrainerCmd.csproj", "{74E9D39B-C763-41FF-B5E8-8BF4AF6A5C9E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Drumz.Common", "Drumz.Common\Drumz.Common.csproj", "{8C6CB32C-C44F-4A98-B894-C7A65728F4DF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74E9D39B-C763-41FF-B5E8-8BF4AF6A5C9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74E9D39B-C763-41FF-B5E8-8BF4AF6A5C9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74E9D39B-C763-41FF-B5E8-8BF4AF6A5C9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74E9D39B-C763-41FF-B5E8-8BF4AF6A5C9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C6CB32C-C44F-4A98-B894-C7A65728F4DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C6CB32C-C44F-4A98-B894-C7A65728F4DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C6CB32C-C44F-4A98-B894-C7A65728F4DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C6CB32C-C44F-4A98-B894-C7A65728F4DF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E7582523-914E-4A77-8983-CF5D9829DC1E}
+	EndGlobalSection
+EndGlobal
