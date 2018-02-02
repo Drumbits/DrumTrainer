@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Immutable;
+using Drumz.Common.Utils;
 
 namespace Drumz.Common
 {
@@ -129,37 +131,77 @@ namespace Drumz.Common
             public string Name { get { return name; } }
         }
     }
-    public class Pattern
+    public class PatternInfo
     {
-        public static IInstrumentId[] DefaultInstruments
+        public int BarsCount { get; private set; }
+        public int BeatsPerBar { get; private set; }
+        public int SuggestedBpm { get; private set; }
+        public int UnitsPerBeat { get; private set; }
+    }
+    public struct TimeInUnits : IEquatable<TimeInUnits>, IComparable<TimeInUnits>
+    {
+        public int Index;
+        public TimeInUnits(int index)
         {
-            get
-            {
-                return new[]
-                {
-                    DrumInstruments.HiHat,
-                    DrumInstruments.HiHatOpen,
-                    DrumInstruments.TomHigh,
-                    DrumInstruments.Snare,
-                    DrumInstruments.TomMid,
-                    DrumInstruments.TomLow,
-                    DrumInstruments.Kick
-                };
-            }
+            this.Index = index;
         }
-        public readonly int BarsCount;
-        public readonly int beatsPerBar;
-        public readonly IDictionary<IInstrumentId, IList<TimedEvent<Velocity>>> Beats;
-        public readonly int SuggestedBpm;
-
-        public Pattern(int barsCount, int beatsPerBar, IDictionary<IInstrumentId, IList<TimedEvent<Velocity>>> beats, int suggestedBpm)
+        public override int GetHashCode()
         {
-            this.BarsCount = barsCount;
-            this.beatsPerBar = beatsPerBar;
-            this.Beats = beats;
-            this.SuggestedBpm = suggestedBpm;
+            return Index;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is TimeInUnits) return Equals((TimeInUnits)obj);
+            return false;
+        }
+
+        public bool Equals(TimeInUnits other)
+        {
+            return other.Index == Index;
+        }
+
+        public int CompareTo(TimeInUnits other)
+        {
+            return Index.CompareTo(other.Index);
+        }
+        public static bool operator==(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index == t2.Index;
+        }
+        public static bool operator !=(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index != t2.Index;
+        }
+        public static bool operator <(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index < t2.Index;
+        }
+        public static bool operator >(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index > t2.Index;
         }
     }
+    public class Pattern
+    {
+        public PatternInfo Info { get; private set; }
+        public ImmutableArray<IInstrumentId> Instruments { get; private set; }
+        private readonly ImmutableSortedDictionary<TimeInUnits, Velocity[]> beats;
+
+        public IDictionary<TimeInUnits, Velocity> Beats(IInstrumentId instrument)
+        {
+            int index = Instruments.IndexOf(instrument);
+            if (index == -1)
+                throw new ArgumentException("Instrument not in pattern: " + instrument + ". Should be one of " + Instruments.ToNiceString());
+            return beats.Where(kv => kv.Value[index] != null).ToDictionary(kv => kv.Key, kv => kv.Value[index]);
+        }
+        public TimeInUnits? NextEventTime(TimeInUnits t)
+        {
+            foreach (var eventTime in beats.Keys)
+                if (eventTime > t) return eventTime;
+            return null;
+        }
+    }
+    
     public class PatternBuilder
     {
         private readonly IDictionary<IInstrumentId, bool[]> beats = new Dictionary<IInstrumentId, bool[]>();
