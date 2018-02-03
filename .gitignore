@@ -32,3 +32,4 @@
 *.app
 obj/
 .vs/
+bin/
