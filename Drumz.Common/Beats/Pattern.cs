@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Immutable;
 using Drumz.Common.Utils;
 
 namespace Drumz.Common.Beats
@@ -74,7 +71,7 @@ namespace Drumz.Common.Beats
     public class Pattern : IPattern
     {
         private readonly SortedDictionary<TimeInUnits, Velocity[]> beats;
-        public Pattern(PatternInfo info) : this(info, new List<IInstrumentId>(0), new SortedDictionary<TimeInUnits, Velocity[]>())
+        public Pattern(PatternInfo info, IEnumerable<IInstrumentId> instruments) : this(info, new List<IInstrumentId>(instruments), new SortedDictionary<TimeInUnits, Velocity[]>())
         {
         }
         internal Pattern(PatternInfo info, List<IInstrumentId> Instruments, SortedDictionary<TimeInUnits, Velocity[]> beats)
@@ -90,6 +87,10 @@ namespace Drumz.Common.Beats
         {
             return beats.Where(kv => kv.Value[instrumentIndex] != null).ToDictionary(kv => kv.Key, kv => kv.Value[instrumentIndex]);
         }
+        public Velocity[] Beats(TimeInUnits t)
+        {
+            return beats.TryGetValue(t, out Velocity[] result) ? result : null;
+        }
         public TimeInUnits? NextEventTime(TimeInUnits t)
         {
             foreach (var eventTime in beats.Keys)
@@ -99,6 +100,21 @@ namespace Drumz.Common.Beats
         public IEnumerable<Tuple<TimeInUnits, int, Velocity>> AllBeats()
         {
             return beats.SelectMany(tv => tv.Value.Select((v,i) => v!= null ? new Tuple<TimeInUnits, int, Velocity>(tv.Key,i,v) : null).Where(r => r!= null));
+        }
+        public void Add(TimeInUnits t, IInstrumentId instrument, Velocity v)
+        {
+            var instrumentIndex = Instruments.IndexOf(instrument);
+            if (instrumentIndex == -1)
+            {
+                throw new NotSupportedException("Pattern class does not support adding instruments. Build a new one instead");
+            }
+            Velocity[] beatsAtT;
+            if (!beats.TryGetValue(t, out beatsAtT))
+            {
+                beatsAtT = new Velocity[Instruments.Count];
+                beats.Add(t, beatsAtT);
+            }
+            beatsAtT[instrumentIndex] = v;
         }
         IReadOnlyList<IInstrumentId> IPattern.Instruments { get; }
     }

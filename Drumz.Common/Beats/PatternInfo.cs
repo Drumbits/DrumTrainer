@@ -7,6 +7,13 @@ namespace Drumz.Common.Beats
         public int BeatsPerBar { get; private set; }
         public int SuggestedBpm { get; private set; }
         public TimeInUnits UnitsPerBeat { get; private set; }
+        public TimeInUnits LastTime
+        {
+            get
+            {
+                return new TimeInUnits(UnitsPerBeat.Index * BarsCount * BeatsPerBar);
+            }
+        }
 
         private PatternInfo() { }
 

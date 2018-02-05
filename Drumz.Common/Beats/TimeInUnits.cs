@@ -46,5 +46,13 @@ namespace Drumz.Common.Beats
         {
             return t1.Index > t2.Index;
         }
+        public static bool operator <=(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index <= t2.Index;
+        }
+        public static bool operator >=(TimeInUnits t1, TimeInUnits t2)
+        {
+            return t1.Index >= t2.Index;
+        }
     }
 }

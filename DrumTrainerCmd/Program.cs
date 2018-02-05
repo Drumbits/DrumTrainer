@@ -6,7 +6,7 @@ namespace DrumTrainerCmd
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Drumz.UI.Class1.Draw();
         }
     }
 }

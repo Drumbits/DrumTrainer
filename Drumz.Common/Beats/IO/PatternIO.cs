@@ -14,16 +14,16 @@ namespace Drumz.Common.Beats.IO
 #else
         public static void Save(Pattern pattern, string path)
         {
-            Save(pattern, new System.IO.StreamWriter(path));
+            Save(pattern, new System.IO.FileStream(path, System.IO.FileMode.Create));
         }
 #endif
-        public static void Save(Pattern pattern, System.IO.TextWriter saveTarget)
+        public static void Save(Pattern pattern, System.IO.Stream saveTarget)
         {
             var data = ToData(pattern);
-            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(PatternData));
+            var serializer = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PatternData));
             using (saveTarget)
             {
-                serializer.Serialize(saveTarget, data);
+                serializer.WriteObject(saveTarget, data);
             }
         }
 #if MOBILE
@@ -31,15 +31,15 @@ namespace Drumz.Common.Beats.IO
 #else
         public static Pattern Load(string path)
         {
-            return Load(new System.IO.StreamReader(path));
+            return Load(new System.IO.FileStream(path, System.IO.FileMode.Open));
         }
 #endif
-        public static Pattern Load(System.IO.TextReader reader)
+        public static Pattern Load(System.IO.Stream reader)
         {
-            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(PatternData));
+            var serializer = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PatternData));
             using (reader)
             {
-                var data = (PatternData)serializer.Deserialize(reader);
+                var data = (PatternData)serializer.ReadObject(reader);
                 return ToPattern(data);
             }
         }
