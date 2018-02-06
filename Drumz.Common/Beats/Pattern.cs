@@ -97,9 +97,20 @@ namespace Drumz.Common.Beats
                 if (eventTime > t) return eventTime;
             return null;
         }
+        public IEnumerable<TimeInUnits> EventTimes
+        {
+            get
+            {
+                return beats.Keys;
+            }
+        }
         public IEnumerable<Tuple<TimeInUnits, int, Velocity>> AllBeats()
         {
             return beats.SelectMany(tv => tv.Value.Select((v,i) => v!= null ? new Tuple<TimeInUnits, int, Velocity>(tv.Key,i,v) : null).Where(r => r!= null));
+        }
+        public IEnumerable<TimedEvent<Beat>> ToBeatSequence()
+        {
+            return AllBeats().Select(b => new TimedEvent<Beat>(Info.TimeInBeats(b.Item1), new Beat(Instruments[b.Item2], b.Item3)));
         }
         public void Add(TimeInUnits t, IInstrumentId instrument, Velocity v)
         {
@@ -116,7 +127,7 @@ namespace Drumz.Common.Beats
             }
             beatsAtT[instrumentIndex] = v;
         }
-        IReadOnlyList<IInstrumentId> IPattern.Instruments { get; }
+        IReadOnlyList<IInstrumentId> IPattern.Instruments { get { return Instruments; } }
     }
 
 }

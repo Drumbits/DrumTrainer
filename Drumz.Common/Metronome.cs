@@ -83,8 +83,8 @@ namespace Drumz.Common
         }
         protected virtual void OnTick(object sender, HighResolutionTimerElapsedEventArgs e)
         {
-            ++ellapsedTicks;
             Tick?.Invoke(ellapsedTicks);
+            ++ellapsedTicks;
         }
 
         public void Dispose()

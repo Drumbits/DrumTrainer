@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
 using Drumz.Common.Beats;
+using Drumz.Common;
+using Drumz.Common.PlayAnalysis;
 
 namespace Drumz.UI
 {
@@ -20,8 +23,16 @@ namespace Drumz.UI
             using (var canvas = surface.Canvas)
             {
                 gridDrawer.Draw(canvas, t);
-                beatsDrawer.Draw(canvas);
+                beatsDrawer.Draw(canvas, t ?? new TimeInUnits(-1));
             }
+        }
+        public void MatchFoundEventHandler(BeatsMatch match)
+        {
+            beatsDrawer.AddMatchedBeat(match);
+        }
+        public void Clear()
+        {
+            beatsDrawer.ClearBeats();
         }
     }
     public class BeatsDrawer
@@ -29,8 +40,11 @@ namespace Drumz.UI
         private readonly Pattern pattern;
         private readonly SKPaint patternPaint;
         private readonly IGridCoordinatesProvider grid;
-        private readonly System.Collections.Generic.List<SKPoint> beats = new System.Collections.Generic.List<SKPoint>();
-
+        private TimeInUnits currentTime = new TimeInUnits(0);
+        private readonly List<SKPoint> patternBeats = new System.Collections.Generic.List<SKPoint>();
+        private readonly List<MatchedBeatMark> matchedPlayedBeats = new System.Collections.Generic.List<MatchedBeatMark>();
+        private readonly IDictionary<IInstrumentId, int> instruments = new Dictionary<IInstrumentId, int>();
+        
         public BeatsDrawer(Pattern pattern, IGridCoordinatesProvider grid)
         {
             this.pattern = pattern;
@@ -41,24 +55,86 @@ namespace Drumz.UI
                 IsAntialias = true,
                 Style = SKPaintStyle.StrokeAndFill
             };
+            for (int i = 0; i < pattern.Instruments.Count; ++i)
+                instruments.Add(pattern.Instruments[i], i);
             foreach (var beat in pattern.AllBeats())
             {
                 var coord = grid.Coordinates(beat.Item2, beat.Item1);
-                beats.Add(coord);
+                patternBeats.Add(coord);
             }
         }
-
-        public void Draw(SKCanvas canvas)
+        public void AddMatchedBeat(BeatsMatch match)
         {
-            foreach (var coord in beats)
+            var coord = grid.Coordinates(match.InstrumentIndex, match.PlayedTime - match.LoopOffset);
+            var obsoleteTime = Math.Min(match.PatternTime, match.PlayedTime) + pattern.Info.TotalBeats;
+            var mark = new MatchedBeatMark(match.Accuracy, coord, obsoleteTime);
+            lock (matchedPlayedBeats)
+            {
+                matchedPlayedBeats.Add(mark);
+            }
+        }
+        public void ClearBeats()
+        {
+            matchedPlayedBeats.Clear();
+        }
+        public void Draw(SKCanvas canvas, TimeInUnits t)
+        {
+            foreach (var coord in patternBeats)
             {
                 canvas.DrawCircle(coord.X, coord.Y, 5, patternPaint);
+            }
+            lock(matchedPlayedBeats)
+            {
+                for (int index = matchedPlayedBeats.Count - 1; index >= 0; --index)
+                {
+                    var match = matchedPlayedBeats[index];
+                    if (match.DeprecateTime <= t.Index / (float)pattern.Info.UnitsPerBeat.Index)
+                    {
+                        Drumz.Common.Diagnostics.Logger.TellF(Common.Diagnostics.Logger.Level.Debug,
+                   "Removing deprecated hit at coord ({0},{1})", match.Coord.X, match.Coord.Y);
+
+                        matchedPlayedBeats.RemoveAt(index);
+                    }
+                    else
+                    {
+                        canvas.DrawCircle(match.Coord.X, match.Coord.Y, 3, match.Paint);
+                    }
+                }
+            }
+        }
+        private class MatchedBeatMark
+        {
+            public readonly SKPoint Coord;
+            public readonly SKPaint Paint;
+            public readonly float DeprecateTime;
+            public MatchedBeatMark(float accuracy, SKPoint coords, float deprecateTime)
+            {
+                this.DeprecateTime = deprecateTime;
+                this.Coord = coords;
+                var baseColor = SKColors.Gray;
+                var lateColor = SKColors.DarkGreen;
+                var earlyColor = SKColors.DarkBlue;
+                var color = Mix(accuracy < 0 ? earlyColor : lateColor, baseColor, 1).WithAlpha(200);
+                Paint = new SKPaint
+                {
+                    Color = color,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.StrokeAndFill
+                };
+            }
+            private static SKColor Mix(SKColor c1, SKColor c2, float accuracy)
+            {
+                return new SKColor(
+                    (byte)(c1.Red * accuracy + c2.Red * (1 - accuracy)),
+                    (byte)(c1.Green * accuracy + c2.Green * (1 - accuracy)),
+                    (byte)(c1.Blue * accuracy + c1.Blue * (1 - accuracy)));
             }
         }
     }
     public interface IGridCoordinatesProvider
     {
         SKPoint Coordinates(int instrumentIndex, TimeInUnits t);
+        SKPoint Coordinates(int instrumentIndex, float timeInBeats);
     }
     public class GridDrawer : IGridCoordinatesProvider
     {
@@ -175,6 +251,13 @@ namespace Drumz.UI
         {
             var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
             var x = gridRect.Left + settings.BeatWidth * t.Index / (float)this.info.UnitsPerBeat.Index;
+
+            return new SKPoint(x, y);
+        }
+        public SKPoint Coordinates(int instrumentIndex, float timeInBeats)
+        {
+            var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
+            var x = gridRect.Left + settings.BeatWidth * timeInBeats;
 
             return new SKPoint(x, y);
         }

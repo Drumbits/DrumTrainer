@@ -43,6 +43,12 @@ namespace Drumz.Common.Beats
 
     public class BeatSequence : IBeatSequence
     {
+        public static BeatSequence FromPattern(Pattern pattern)
+        {
+            var beats = pattern.ToBeatSequence().ToArray();
+
+            return new BeatSequence(beats, new RealInterval(beats[0].Time, beats.Last().Time));
+        }
         private readonly TimedEvent<Beat>[] beats;
         private readonly RealInterval span;
 

@@ -5,7 +5,7 @@ namespace Drumz.Common.Beats
     {
         public int BarsCount { get; private set; }
         public int BeatsPerBar { get; private set; }
-        public int SuggestedBpm { get; private set; }
+        public int SuggestedBpm { get;  set; }
         public TimeInUnits UnitsPerBeat { get; private set; }
         public TimeInUnits LastTime
         {
@@ -13,6 +13,13 @@ namespace Drumz.Common.Beats
             {
                 return new TimeInUnits(UnitsPerBeat.Index * BarsCount * BeatsPerBar);
             }
+        }
+
+        public float TotalBeats { get { return BarsCount * BeatsPerBar; } }
+
+        public float TimeInBeats(TimeInUnits t)
+        {
+            return t.Index / (float)UnitsPerBeat.Index;
         }
 
         private PatternInfo() { }
