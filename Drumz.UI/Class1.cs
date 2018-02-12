@@ -120,7 +120,7 @@ namespace Drumz.UI
             }
         }
         public static void Draw(SKSurface surface, int timeIndex)
-        {
+        {/*
             var drawer = new PatternDrawer(pattern,
                 new GridDrawer.Settings
                 {
@@ -131,7 +131,7 @@ namespace Drumz.UI
                 2);
             if (timeIndex > pattern.Info.LastTime.Index)
                 timeIndex = (timeIndex - 1) % pattern.Info.LastTime.Index + 1;
-            drawer.Draw(surface, new TimeInUnits(timeIndex));/*
+            drawer.Draw(surface, new TimeInUnits(timeIndex));
             int beatsPerBar = pattern.Info.BeatsPerBar;
             int nbBars = pattern.Info.BarsCount;
             int unitPerBeat = pattern.Info.UnitsPerBeat.Index;

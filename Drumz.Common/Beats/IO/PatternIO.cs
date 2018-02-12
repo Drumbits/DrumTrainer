@@ -47,9 +47,9 @@ namespace Drumz.Common.Beats.IO
         {
             return new InstrumentData { Name = instrument.Name, Id = index };
         }
-        private static BeatData ToData(Tuple<TimeInUnits, int, Velocity> beat)
+        private static BeatData ToData(PatternBeat beat)
         {
-            return new BeatData { Time = beat.Item1.Index, Instrument = beat.Item2, Velocity = beat.Item3.Value };
+            return new BeatData { Time = beat.T.Index, Instrument = beat.Instrument, Velocity = beat.Velocity.Value };
         }
         public static PatternData ToData(Pattern pattern)
         {

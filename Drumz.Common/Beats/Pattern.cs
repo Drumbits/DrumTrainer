@@ -68,6 +68,19 @@ namespace Drumz.Common.Beats
             return pattern.Beats(index);
         }
     }
+    public class PatternBeat
+    {
+        public readonly int Instrument;
+        public readonly TimeInUnits T;
+        public readonly Velocity Velocity;
+
+        public PatternBeat(TimeInUnits t, int instrument, Velocity velocity)
+        {
+            Instrument = instrument;
+            T = t;
+            Velocity = velocity;
+        }
+    }
     public class Pattern : IPattern
     {
         private readonly SortedDictionary<TimeInUnits, Velocity[]> beats;
@@ -104,13 +117,13 @@ namespace Drumz.Common.Beats
                 return beats.Keys;
             }
         }
-        public IEnumerable<Tuple<TimeInUnits, int, Velocity>> AllBeats()
+        public IEnumerable<PatternBeat> AllBeats()
         {
-            return beats.SelectMany(tv => tv.Value.Select((v,i) => v!= null ? new Tuple<TimeInUnits, int, Velocity>(tv.Key,i,v) : null).Where(r => r!= null));
+            return beats.SelectMany(tv => tv.Value.Select((v,i) => v!= null ? new PatternBeat(tv.Key,i,v) : null).Where(r => r!= null));
         }
         public IEnumerable<TimedEvent<Beat>> ToBeatSequence()
         {
-            return AllBeats().Select(b => new TimedEvent<Beat>(Info.TimeInBeats(b.Item1), new Beat(Instruments[b.Item2], b.Item3)));
+            return AllBeats().Select(b => new TimedEvent<Beat>(Info.TimeInBeats(b.T), new Beat(Instruments[b.Instrument], b.Velocity)));
         }
         public void Add(TimeInUnits t, IInstrumentId instrument, Velocity v)
         {

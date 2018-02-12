@@ -8,6 +8,49 @@ using Drumz.Common.PlayAnalysis;
 
 namespace Drumz.UI
 {
+    public interface IBeatMark
+    {
+        void Draw(SKCanvas canvas);
+    }
+    public class BeatMark
+    {
+        public readonly BeatId Id;
+        public readonly SKPoint Coord;
+        public SKPaint Paint;
+        public readonly float Expiry;
+
+        public BeatMark(BeatId id, SKPoint coord, SKPaint paint, float expiry)
+        {
+            Id = id;
+            Coord = coord;
+            Paint = paint;
+            this.Expiry = expiry;
+        }
+    }
+    public class BeatMarkPaints : IDisposable
+    {
+        private readonly Dictionary<BeatStatus, SKPaint> beatPaints = new Dictionary<BeatStatus, SKPaint>();
+
+        public BeatMarkPaints()
+        {
+            beatPaints.Add(BeatStatus.Pending, new SKPaint { Color = SKColors.Gray.WithAlpha(125), IsAntialias = true });
+            beatPaints.Add(BeatStatus.Correct, new SKPaint { Color = SKColors.Green.WithAlpha(125), IsAntialias = true });
+            beatPaints.Add(BeatStatus.Early, new SKPaint { Color = SKColors.Orange.WithAlpha(125), IsAntialias = true });
+            beatPaints.Add(BeatStatus.Late, new SKPaint { Color = SKColors.Violet.WithAlpha(125), IsAntialias = true });
+            beatPaints.Add(BeatStatus.MissedPattern, new SKPaint { Color = SKColors.Red.WithAlpha(125), IsAntialias = true });
+            beatPaints.Add(BeatStatus.MissedPlay, new SKPaint { Color = SKColors.Red.WithAlpha(125), IsAntialias = true });
+        }
+
+        public void Dispose()
+        {
+            foreach (var paint in beatPaints) paint.Value.Dispose();
+        }
+
+        public SKPaint Paint(BeatStatus status)
+        {
+            return beatPaints[status];
+        }
+    }
     public class PatternDrawer
     {
         private readonly GridDrawer gridDrawer;
@@ -18,17 +61,26 @@ namespace Drumz.UI
             this.gridDrawer = new GridDrawer(settings, pattern.Info, subdivisions, pattern.Instruments.Select(i => i.Name).ToArray());
             beatsDrawer = new BeatsDrawer(pattern, gridDrawer);
         }
-        public void Draw(SKSurface surface, TimeInUnits? t)
+        public void Draw(SKSurface surface, float t)
         {
             using (var canvas = surface.Canvas)
             {
-                gridDrawer.Draw(canvas, t);
-                beatsDrawer.Draw(canvas, t ?? new TimeInUnits(-1));
+                gridDrawer.Draw(canvas);
+                gridDrawer.DrawTimeMark(canvas, t);
+                beatsDrawer.Draw(canvas);
             }
         }
-        public void MatchFoundEventHandler(BeatsMatch match)
+        public void AddPlayedBeat(TimedBeat timedBeat, int instrumentIndexInPattern)
         {
-            beatsDrawer.AddMatchedBeat(match);
+            beatsDrawer.AddPlayedBeat(timedBeat, instrumentIndexInPattern);
+        }
+        public void SetPlayedBeatStatus(BeatId beatId, BeatStatus status)
+        {
+            beatsDrawer.SetPlayedBeatStatus(beatId, status);
+        }
+        public void Tick(float t)
+        {
+            beatsDrawer.Tick(t);
         }
         public void Clear()
         {
@@ -40,9 +92,9 @@ namespace Drumz.UI
         private readonly Pattern pattern;
         private readonly SKPaint patternPaint;
         private readonly IGridCoordinatesProvider grid;
-        private TimeInUnits currentTime = new TimeInUnits(0);
+        private readonly BeatMarkPaints beatPaints = new BeatMarkPaints();
         private readonly List<SKPoint> patternBeats = new System.Collections.Generic.List<SKPoint>();
-        private readonly List<MatchedBeatMark> matchedPlayedBeats = new System.Collections.Generic.List<MatchedBeatMark>();
+        private readonly Queue<BeatMark> beatMarks = new Queue<BeatMark>();
         private readonly IDictionary<IInstrumentId, int> instruments = new Dictionary<IInstrumentId, int>();
         
         public BeatsDrawer(Pattern pattern, IGridCoordinatesProvider grid)
@@ -59,75 +111,41 @@ namespace Drumz.UI
                 instruments.Add(pattern.Instruments[i], i);
             foreach (var beat in pattern.AllBeats())
             {
-                var coord = grid.Coordinates(beat.Item2, beat.Item1);
+                var coord = grid.Coordinates(beat.Instrument, beat.T);
                 patternBeats.Add(coord);
             }
         }
-        public void AddMatchedBeat(BeatsMatch match)
+        public void AddPlayedBeat(TimedBeat timedBeat, int instrumentIndexInPattern)
         {
-            var coord = grid.Coordinates(match.InstrumentIndex, match.PlayedTime - match.LoopOffset);
-            var obsoleteTime = Math.Min(match.PatternTime, match.PlayedTime) + pattern.Info.TotalBeats;
-            var mark = new MatchedBeatMark(match.Accuracy, coord, obsoleteTime);
-            lock (matchedPlayedBeats)
-            {
-                matchedPlayedBeats.Add(mark);
-            }
+            var coord = grid.Coordinates(instrumentIndexInPattern, timedBeat.T);
+            var expiry = timedBeat.T + 0.75f*pattern.Info.TotalBeats;
+            var mark = new BeatMark(timedBeat.Id, coord, beatPaints.Paint(BeatStatus.Pending), expiry);
+            beatMarks.Enqueue(mark);
+        }
+        public void SetPlayedBeatStatus(BeatId beatId, BeatStatus status)
+        {
+            foreach (var mark in beatMarks)
+                if (mark.Id.Index == beatId.Index)
+                    mark.Paint = beatPaints.Paint(status);
         }
         public void ClearBeats()
         {
-            matchedPlayedBeats.Clear();
+            beatMarks.Clear();
         }
-        public void Draw(SKCanvas canvas, TimeInUnits t)
+        public void Tick(float t)
+        {
+            while (beatMarks.Count > 0 && beatMarks.Peek().Expiry <= t)
+                beatMarks.Dequeue();
+        }
+        public void Draw(SKCanvas canvas)
         {
             foreach (var coord in patternBeats)
             {
                 canvas.DrawCircle(coord.X, coord.Y, 5, patternPaint);
             }
-            lock(matchedPlayedBeats)
+            foreach (var beatMark in beatMarks)
             {
-                for (int index = matchedPlayedBeats.Count - 1; index >= 0; --index)
-                {
-                    var match = matchedPlayedBeats[index];
-                    if (match.DeprecateTime <= t.Index / (float)pattern.Info.UnitsPerBeat.Index)
-                    {
-                        Drumz.Common.Diagnostics.Logger.TellF(Common.Diagnostics.Logger.Level.Debug,
-                   "Removing deprecated hit at coord ({0},{1})", match.Coord.X, match.Coord.Y);
-
-                        matchedPlayedBeats.RemoveAt(index);
-                    }
-                    else
-                    {
-                        canvas.DrawCircle(match.Coord.X, match.Coord.Y, 3, match.Paint);
-                    }
-                }
-            }
-        }
-        private class MatchedBeatMark
-        {
-            public readonly SKPoint Coord;
-            public readonly SKPaint Paint;
-            public readonly float DeprecateTime;
-            public MatchedBeatMark(float accuracy, SKPoint coords, float deprecateTime)
-            {
-                this.DeprecateTime = deprecateTime;
-                this.Coord = coords;
-                var baseColor = SKColors.Gray;
-                var lateColor = SKColors.DarkGreen;
-                var earlyColor = SKColors.DarkBlue;
-                var color = Mix(accuracy < 0 ? earlyColor : lateColor, baseColor, 1).WithAlpha(200);
-                Paint = new SKPaint
-                {
-                    Color = color,
-                    IsAntialias = true,
-                    Style = SKPaintStyle.StrokeAndFill
-                };
-            }
-            private static SKColor Mix(SKColor c1, SKColor c2, float accuracy)
-            {
-                return new SKColor(
-                    (byte)(c1.Red * accuracy + c2.Red * (1 - accuracy)),
-                    (byte)(c1.Green * accuracy + c2.Green * (1 - accuracy)),
-                    (byte)(c1.Blue * accuracy + c1.Blue * (1 - accuracy)));
+                canvas.DrawCircle(beatMark.Coord.X, beatMark.Coord.Y, 3, beatMark.Paint);
             }
         }
     }
@@ -256,12 +274,23 @@ namespace Drumz.UI
         }
         public SKPoint Coordinates(int instrumentIndex, float timeInBeats)
         {
+            timeInBeats = RecenterTime(timeInBeats);
             var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
             var x = gridRect.Left + settings.BeatWidth * timeInBeats;
 
             return new SKPoint(x, y);
         }
-        public void Draw(SKCanvas canvas, TimeInUnits? t)
+        private float RecenterTime(float t)
+        {
+            int nbLoops = (int)Math.Floor(Math.Round(t / (info.BarsCount * info.BeatsPerBar), 4));
+            return t - nbLoops * info.BarsCount * info.BeatsPerBar;
+        }
+        public void DrawTimeMark(SKCanvas canvas, float t)
+        {
+            t = RecenterTime(t);
+            DrawVerticalLine(canvas, gridRect.Left + t * settings.BeatWidth, gridPaints.timeMark);
+        }
+        public void Draw(SKCanvas canvas)
         {
             canvas.DrawPaint(backgroundPaint);
             // drawing horizontal lines
@@ -281,11 +310,6 @@ namespace Drumz.UI
                         DrawVerticalLine(canvas, col + subDivIndex * step, (int?)null);
                     col += settings.BeatWidth;
                 }
-            if (t.HasValue && t.Value.Index > 0)
-            {
-                var index = (t.Value.Index - 1) % info.LastTime.Index;
-                DrawVerticalLine(canvas, gridRect.Left + index * timeUnitWidth, gridPaints.timeMark);
-            }
         }
         private void DrawHorizontalLine(SKCanvas canvas, float baseLine)
         {
