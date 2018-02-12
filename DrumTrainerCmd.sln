@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Drumz.UI", "Drumz.UI\Drumz.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drumz.UI.Desktop", "Drumz.UI.Desktop\Drumz.UI.Desktop.csproj", "{7C9E304B-34C0-4B3B-A863-05C77F8619BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary1", "ClassLibrary1\ClassLibrary1.csproj", "{64C468D9-104B-4AEA-B113-F2F5E2692910}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClassLibrary1", "ClassLibrary1\ClassLibrary1.csproj", "{64C468D9-104B-4AEA-B113-F2F5E2692910}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drumz.Common.UnitTests", "Drumz.Common.UnitTests\Drumz.Common.UnitTests.csproj", "{CBEFA18A-8872-4823-9CAD-5DE5757EDE00}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{64C468D9-104B-4AEA-B113-F2F5E2692910}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64C468D9-104B-4AEA-B113-F2F5E2692910}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64C468D9-104B-4AEA-B113-F2F5E2692910}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBEFA18A-8872-4823-9CAD-5DE5757EDE00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBEFA18A-8872-4823-9CAD-5DE5757EDE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBEFA18A-8872-4823-9CAD-5DE5757EDE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBEFA18A-8872-4823-9CAD-5DE5757EDE00}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
