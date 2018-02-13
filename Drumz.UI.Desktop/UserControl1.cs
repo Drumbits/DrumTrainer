@@ -22,7 +22,6 @@ namespace Drumz.UI.Desktop
             InitializeComponent();
             var path = @"..\..\..\Samples\RHCP_GiveItAway1.drumz.pat.json";
             var pattern = Drumz.Common.Beats.IO.PatternIO.Load(path);
-            //pattern.Info.SuggestedBpm = 6;
             bpm = pattern.Info.SuggestedBpm;
             var settings = new GridDrawer.Settings { BeatWidth = 64, FontSize = 20, LineHeight = 24 };
             patternDrawer = new PatternDrawer(pattern, settings, 2);
@@ -34,7 +33,7 @@ namespace Drumz.UI.Desktop
             playAnalysis.Tick += PlayAnalysis_Tick;        
             Drumz.Common.Diagnostics.Logger.Instance.Log += Instance_Log;
         }
-
+        private bool refreshRunning = false;
         private void PlayAnalysis_Tick(float t)
         {
             if (!chrono.IsRunning)
@@ -53,10 +52,10 @@ namespace Drumz.UI.Desktop
         public event MessagerHandler Log;
 
         private readonly System.Diagnostics.Stopwatch chrono = new System.Diagnostics.Stopwatch();
+        private readonly Drumz.Common.Utils.FpsCounter fpsCounter = new Common.Utils.FpsCounter(50);
         private readonly int bpm;
         private readonly PatternDrawer patternDrawer;
         private readonly PlayAnalysisSession playAnalysis;
-        private readonly Metronome metronome;
         private readonly IDictionary<string, IInstrumentId> instrumentKeys = new Dictionary<string, IInstrumentId>(StringComparer.OrdinalIgnoreCase);
 
         protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
@@ -65,6 +64,12 @@ namespace Drumz.UI.Desktop
             //var start = chrono.ElapsedMilliseconds;
             //localChrono.Start();
             patternDrawer.Draw(e.Surface, playAnalysis.T);
+            var fps = fpsCounter.AddFrame();
+            if (fps >= 0f)
+            {
+                fps = (float)Math.Round(fps,0);
+                e.Surface.Canvas.DrawText(fps.ToString(), 0, 10, new SkiaSharp.SKPaint { Color = SkiaSharp.SKColors.White, TextSize = 8 });
+            }
             //localChrono.Stop();
             //Log?.Invoke(start + " " + chrono.ElapsedMilliseconds + " " + localChrono.ElapsedMilliseconds);
         }
@@ -75,12 +80,15 @@ namespace Drumz.UI.Desktop
                 Log("Stopping");
                 playAnalysis.Stop();
                 chrono.Stop();
+                fpsCounter.Stop();
                 return;
             }
             playAnalysis.Reset();
             this.patternDrawer.Clear();
             Refresh();
+            fpsCounter.Start();
             playAnalysis.Start();
+            fpsCounter.Start();
             Log("Started");
         }
         protected override void OnKeyPress(KeyPressEventArgs e)
