@@ -6,6 +6,10 @@ namespace Drumz.Common.PlayAnalysis
 {
     public class PatternMatcher
     {
+        public static PatternMatcher Create(Pattern pattern, Settings settings, IMatchResultsCollector matchResultsCollector)
+        {
+            return Create(PatternBeatIds.Create(pattern), pattern.Info, settings, matchResultsCollector);
+        }
         public static PatternMatcher Create(PatternBeatIds pattern, PatternInfo patternInfo, Settings settings, IMatchResultsCollector resultsCollector)
         {
             var patternBeatLists = ContinuousBeatsLooper.FromPattern(pattern, patternInfo).ToDictionary(

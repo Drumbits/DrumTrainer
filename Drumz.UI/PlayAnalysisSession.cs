@@ -56,6 +56,7 @@ namespace Drumz.UI
         private readonly float timeUnitInMs;
         private readonly System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
         private bool isRunning = false;
+        private PerformanceSummary summary = null;
         private System.Collections.Concurrent.ConcurrentQueue<TimedEvent<Beat>> playedBeatsBuffer = new System.Collections.Concurrent.ConcurrentQueue<TimedEvent<Beat>>();
 
         public PlayAnalysisSession(Settings settings, Pattern pattern)
@@ -67,7 +68,9 @@ namespace Drumz.UI
             this.matcher = PatternMatcher.Create(patternBeats, pattern.Info, new PatternMatcher.Settings(), this);
             timeUnitInMs = pattern.Info.SuggestedBpm / 60000f;
         }
+
         public bool IsRunning { get { return isRunning; } }
+
         public void RegisterPlayedBeat(Beat beat)
         {
             playedBeatsBuffer.Enqueue(new TimedEvent<Beat>(T, beat));
@@ -103,9 +106,15 @@ namespace Drumz.UI
                 return timeUnitInMs * timer.ElapsedMilliseconds;
             }
         }
+        public PerformanceSummary Summary
+        {
+            get { return summary; }
+        }
         public void Reset()
         {
+            this.summary = new PerformanceSummary(patternBeats);
             timer.Reset();
+            matcher.Reset();
             playedBeatsBuffer = new System.Collections.Concurrent.ConcurrentQueue<TimedEvent<Beat>>();
         }
         private void FlushBeatsBuffer()
@@ -128,17 +137,18 @@ namespace Drumz.UI
 
         void IMatchResultsCollector.Match(BeatsMatch match)
         {
-            //todo: collect matches
+            summary.BeatSummary(match.PatternBeat.Id).Add(match.Accuracy);
             var status = MatchStatus(match.Accuracy);
             PlayedBeatStatusSet?.Invoke(match.PlayedBeat.Id, status);
         }
 
         void IMatchResultsCollector.MissedBeat(MissedBeat match)
         {
-            //todo: collect misses
             if (match.Beat.Id.IsPattern)
+            {
+                summary.BeatSummary(match.Beat.Id).AddMiss();
                 PatternMissed?.Invoke(match.Beat, match.InstrumentIndex);
-
+            }
             PlayedBeatStatusSet?.Invoke(match.Beat.Id, BeatStatus.MissedPlay);
         }
     }

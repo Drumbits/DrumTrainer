@@ -33,7 +33,7 @@ namespace Drumz.UI.Desktop
             playAnalysis.Tick += PlayAnalysis_Tick;        
             Drumz.Common.Diagnostics.Logger.Instance.Log += Instance_Log;
         }
-        private bool refreshRunning = false;
+        //private bool refreshRunning = false;
         private void PlayAnalysis_Tick(float t)
         {
             if (!chrono.IsRunning)
@@ -63,13 +63,16 @@ namespace Drumz.UI.Desktop
             //var localChrono = new System.Diagnostics.Stopwatch();
             //var start = chrono.ElapsedMilliseconds;
             //localChrono.Start();
-            patternDrawer.Draw(e.Surface, playAnalysis.T);
+            patternDrawer.Draw(e.Surface, e.Info.Rect, playAnalysis.T);
             var fps = fpsCounter.AddFrame();
             if (fps >= 0f)
             {
                 fps = (float)Math.Round(fps,0);
                 e.Surface.Canvas.DrawText(fps.ToString(), 0, 10, new SkiaSharp.SKPaint { Color = SkiaSharp.SKColors.White, TextSize = 8 });
             }
+            e.Surface.Canvas.DrawText(playAnalysis.T.ToString(), 20, 10, new SkiaSharp.SKPaint { Color = SkiaSharp.SKColors.White, TextSize = 8 });
+
+
             //localChrono.Stop();
             //Log?.Invoke(start + " " + chrono.ElapsedMilliseconds + " " + localChrono.ElapsedMilliseconds);
         }
@@ -81,6 +84,7 @@ namespace Drumz.UI.Desktop
                 playAnalysis.Stop();
                 chrono.Stop();
                 fpsCounter.Stop();
+                patternDrawer.SetSummary(playAnalysis.Summary);
                 return;
             }
             playAnalysis.Reset();
@@ -97,7 +101,7 @@ namespace Drumz.UI.Desktop
             {
                 if (instrumentKeys.TryGetValue(e.KeyChar.ToString(), out IInstrumentId instrument))
                 {
-                    var t = chrono.ElapsedMilliseconds * bpm / 60000f;
+                    var t = playAnalysis.T;
                     Log?.Invoke(e.KeyChar + ": " + t);
                     playAnalysis.RegisterPlayedBeat(new Beat(instrument, Velocity.Medium));
                 }

@@ -39,5 +39,8 @@ namespace Drumz.Common.PlayAnalysis
         {
             return GetEnumerator();
         }
+        public int Count { get
+            { return beats.Length - 1; }
+        }
     }
 }

@@ -2,9 +2,44 @@
 using System.Linq;
 using SkiaSharp;
 using Drumz.Common.Beats;
+using Drumz.Common.PlayAnalysis;
 
 namespace Drumz.UI
 {
+
+    public class SummaryDrawer
+    {
+        private readonly SKPaint mainPaint = new SKPaint { Color = SKColors.White, TextSize = 12, IsAntialias=true,LcdRenderText=true };
+        private readonly IGridCoordinatesProvider gridCoordinates;
+        private readonly PatternBeatIds pattern;
+
+        public SummaryDrawer(IGridCoordinatesProvider gridCoordinates, PatternBeatIds pattern)
+        {
+            this.gridCoordinates = gridCoordinates;
+            this.pattern = pattern;
+        }
+
+        private void PrintBeatSummary(SKCanvas canvas, SKPoint center, AccuracySummary accuracy)
+        {
+            var s = Math.Round(100 * accuracy.Value, 0).ToString();
+            var width = mainPaint.MeasureText(s);
+            var bl = new SKPoint(center.X - 0.5f * width, center.Y + 0.5f * mainPaint.TextSize);
+            canvas.DrawText(s, bl.X, bl.Y, mainPaint);
+        }
+        public void Draw(SKCanvas canvas, SKRect gridRect, PerformanceSummary summary)
+        {
+            canvas.Save();
+            canvas.Translate(0, gridRect.Height);
+            foreach (var beat in pattern)
+            {
+                var beatInfo = pattern.Beat(beat);
+                var summaryForBeat = summary.BeatSummary(beat);
+                var point = gridCoordinates.Coordinates(beatInfo.Instrument, beatInfo.T);
+                PrintBeatSummary(canvas, point, summaryForBeat);
+            }
+            canvas.Restore();
+        }
+    }
     public class GridDrawer : IGridCoordinatesProvider
     {
         public class Settings
@@ -113,9 +148,10 @@ namespace Drumz.UI
         {
             var upColor = new SKColor(25, 146, 191);
             var downColor = new SKColor(37, 92, 123);
-            var gradient = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(0, gridRect.Bottom), new[] { upColor, downColor }, null, SKShaderTileMode.Clamp);
+            var gradient = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(0, 100/*gridRect.Bottom*/), new[] { upColor, downColor }, null, SKShaderTileMode.Clamp);
             return new SKPaint { Shader = gradient };
         }
+        public SKRect GridRect { get { return gridRect; } }
         public SKPoint Coordinates(int instrumentIndex, TimeInUnits t)
         {
             var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
@@ -141,9 +177,12 @@ namespace Drumz.UI
             t = RecenterTime(t);
             DrawVerticalLine(canvas, gridRect.Left + t * settings.BeatWidth, gridPaints.timeMark);
         }
-        public void Draw(SKCanvas canvas)
+        public void Draw(SKCanvas canvas, SKRect rect)
         {
+            canvas.Save();
+            canvas.Scale(rect.Height / 100f);
             canvas.DrawPaint(backgroundPaint);
+            canvas.Restore();
             // drawing horizontal lines
             for (int i = 0; i < instrumentNames.Length; ++i)
             {

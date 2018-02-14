@@ -30,7 +30,7 @@ namespace Drumz.UI
             const int blockHeight = 24;
             const int blockWidth = 32;
 
-            const int heightInBlocks = 8;
+            //const int heightInBlocks = 8;
 
             const int separator = 1;
             string[] instru = new string[] { "HH", "SN", "T1", "CR", "RD" };

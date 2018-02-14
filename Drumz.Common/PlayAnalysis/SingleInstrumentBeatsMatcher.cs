@@ -1,4 +1,5 @@
 ﻿using System;
+using Drumz.Common.Utils;
 
 namespace Drumz.Common.PlayAnalysis
 {
@@ -31,18 +32,23 @@ namespace Drumz.Common.PlayAnalysis
             }
             playedBeats.Add(beat);
         }
+        private float previousT = 0f;
         public void Tick(float t, IMatchResultsCollector results)
         {
+            //if (instrumentIndex == 2)
+            //    Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "t: {0}, previousT: {1}", t, previousT);
+
             lock (playedBeats)
             {
-                patternBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
-                playedBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
-                /*
-                if (instrumentIndex == 2)
+                /*if (instrumentIndex == 2 && t - previousT > 0.1f)
                 {
+                    previousT = t;
                     Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Pattern: {0}", patternBeats.Beats.Content.ToNiceString());
                     Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Played: {0}", playedBeats.Content.ToNiceString());
                 }*/
+                patternBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
+                playedBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
+
                 LookForMatches(results.Match);
             }
         }
@@ -50,6 +56,11 @@ namespace Drumz.Common.PlayAnalysis
         {
             playedBeats.Clear();
             patternBeats.Reset();
+            previousT = 0f;
+            if (instrumentIndex == 2)
+            {
+                Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Reset");
+            }
         }
         private void LookForMatches(Action<BeatsMatch> matchFound)
         {
