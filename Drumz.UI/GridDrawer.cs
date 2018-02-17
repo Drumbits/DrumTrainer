@@ -36,7 +36,7 @@ namespace Drumz.UI
             {
                 var beatInfo = pattern.Beat(beat);
                 var summaryForBeat = summary.BeatSummary(beat);
-                var point = gridCoordinates.Coordinates(beatInfo.Instrument, beatInfo.T);
+                var point = gridCoordinates.Coordinates(beatInfo.Sound.Instrument, beatInfo.T);
                 PrintBeatSummary(canvas, point, summaryForBeat);
             }
             canvas.Restore();

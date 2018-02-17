@@ -37,45 +37,33 @@ namespace Drumz.Common.Beats
                 ++result;
             }
             return -1;
-        }/*
-        public static IDictionary<TimeInUnits, Velocity> Beats(this Pattern pattern, IInstrumentId instrument)
-        {
-            int index = pattern.Instruments.IndexOf(instrument);
-            if (index == -1)
-                throw new ArgumentException("Instrument not in pattern: " + instrument + ". Should be one of " + pattern.Instruments.ToNiceString());
-            return pattern.Beats(index);
-        }*/
+        }
     }
     public class PatternBeat
     {
         public readonly TimeInUnits T;
-        public readonly IInstrumentId Instrument;
+        public readonly ISoundId Sound;
         public readonly Velocity Velocity;
 
-        public PatternBeat(TimeInUnits t, IInstrumentId instrument, Velocity velocity)
+        public PatternBeat(TimeInUnits t, ISoundId sound, Velocity velocity)
         {
             T = t;
-            Instrument = instrument;
+            Sound = sound;
             Velocity = velocity;
         }
     }
     public class Pattern
     {
-        /*
-        private readonly SortedDictionary<TimeInUnits, Velocity[]> beats;
-        public Pattern(PatternInfo info, IEnumerable<IInstrumentId> instruments) : this(info, new List<IInstrumentId>(instruments), new SortedDictionary<TimeInUnits, Velocity[]>())
-        {
-        }*/
         private readonly PatternBeat[] beats;
 
-        private Pattern(PatternInfo info, PatternBeat[] beats, List<IInstrumentId> instruments)
+        private Pattern(PatternInfo info, PatternBeat[] beats, SoundsList sounds)
         {
             this.Info = info;
-            this.Instruments = instruments;
+            this.Sounds = sounds;
             this.beats = beats;
         }
         public PatternInfo Info { get; private set; }
-        public List<IInstrumentId> Instruments { get; private set; }
+        public SoundsList Sounds { get; private set; }
         public PatternBeat Beat(BeatId id)
         {
             //todo: change this silly negative index thing
@@ -97,23 +85,23 @@ namespace Drumz.Common.Beats
         }
         public IEnumerable<TimedEvent<Beat>> ToBeatSequence()
         {
-            return beats.Select(b => new TimedEvent<Beat>(Info.TimeInBeats(b.T), new Beat(b.Instrument, b.Velocity)));
+            return beats.Select(b => new TimedEvent<Beat>(Info.TimeInBeats(b.T), new Beat(b.Sound, b.Velocity)));
         }
         public class Builder
         {
             private readonly SortedList<TimeInUnits, List<PatternBeat>> beats = new SortedList<TimeInUnits, List<PatternBeat>>();
             private PatternInfo patternInfo;
-            private readonly List<IInstrumentId> preferredInstrumentsOrder;
+            private readonly List<ISoundId> preferredInstrumentsOrder;
 
-            public Builder() : this(new IInstrumentId[0]) { }
+            public Builder() : this(new ISoundId[0]) { }
 
-            public Builder(IInstrumentId[] preferredInstrumentsOrder)
+            public Builder(ISoundId[] preferredInstrumentsOrder)
             {
-                this.preferredInstrumentsOrder = new List<IInstrumentId>(preferredInstrumentsOrder);
+                this.preferredInstrumentsOrder = new List<ISoundId>(preferredInstrumentsOrder);
             }
 
             public PatternInfo PatternInfo { set { patternInfo = value; } }
-            public void Add(TimeInUnits t, IInstrumentId instrument, Velocity v)
+            public void Add(TimeInUnits t, ISoundId sound, Velocity v)
             {
                 List<PatternBeat> beatsAtT;
                 if (!beats.TryGetValue(t, out beatsAtT))
@@ -121,17 +109,17 @@ namespace Drumz.Common.Beats
                     beatsAtT = new List<PatternBeat>(1);
                     beats.Add(t, beatsAtT);
                 }
-                var patternBeat = new PatternBeat(t, instrument, v);
-                if (beatsAtT.Any(p => Equals(p.Instrument, instrument)))
-                    throw new ArgumentException(string.Format("Duplicate beat on {0} at t={1}", instrument.Name, t.Index));
+                var patternBeat = new PatternBeat(t, sound, v);
+                if (beatsAtT.Any(p => Equals(p.Sound, sound)))
+                    throw new ArgumentException(string.Format("Duplicate beat on {0} at t={1}", sound.Name(), t.Index));
                 beatsAtT.Add(patternBeat);
-                if (!preferredInstrumentsOrder.Contains(instrument))
-                    preferredInstrumentsOrder.Add(instrument);
+                if (!preferredInstrumentsOrder.Contains(sound))
+                    preferredInstrumentsOrder.Add(sound);
             }
             public Pattern Build()
             {
                 if (patternInfo == null) throw new ArgumentException("PatternInfo not set");
-                return new Pattern(patternInfo, beats.Values.SelectMany(b => b).ToArray(), preferredInstrumentsOrder);
+                return new Pattern(patternInfo, beats.Values.SelectMany(b => b).ToArray(), new SoundsList(preferredInstrumentsOrder));
             }
         }
     }

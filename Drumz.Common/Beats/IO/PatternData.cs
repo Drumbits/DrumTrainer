@@ -17,18 +17,27 @@ namespace Drumz.Common.Beats.IO
         [DataMember]
         public int SuggestedBpm = 0;
         [DataMember]
-        public InstrumentData[] Instruments;
+        public SoundData[] Sounds;
         [DataMember]
         public BeatData[] Beats;
 
     }
     [DataContract]
-    public class InstrumentData
+    public class SoundData
     {
         [DataMember]
-        public string Name;
-        [DataMember]
         public int Id;
+        [DataMember]
+        public string Instrument;
+        [DataMember]
+        public string Technique;
+        [DataMember]
+        public string Mark;
+
+        public override string ToString()
+        {
+            return string.Format("[{0}] {1}.{2} ({3})", Id, Instrument, Technique, Mark);
+        }
     }
 
     [DataContract]
@@ -37,8 +46,13 @@ namespace Drumz.Common.Beats.IO
         [DataMember]
         public int Time;
         [DataMember]
-        public int Instrument;
+        public int Sound;
         [DataMember]
         public double Velocity;
+
+        public override string ToString()
+        {
+            return string.Format("{0}: {1}/{2}", Time, Sound, Velocity);
+        }
     }
 }

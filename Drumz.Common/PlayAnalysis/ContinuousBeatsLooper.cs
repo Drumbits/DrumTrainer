@@ -13,10 +13,10 @@ namespace Drumz.Common.PlayAnalysis
             foreach (var beatId in pattern.Ids)
             {
                 var beat = pattern.Beat(beatId);
-                if (!allBeats.TryGetValue(beat.Instrument, out List<TimedBeatId> beatsForInstrument))
+                if (!allBeats.TryGetValue(beat.Sound.Instrument, out List<TimedBeatId> beatsForInstrument))
                 {
                     beatsForInstrument = new List<TimedBeatId>();
-                    allBeats.Add(beat.Instrument, beatsForInstrument);
+                    allBeats.Add(beat.Sound.Instrument, beatsForInstrument);
                 }
                 beatsForInstrument.Add(new TimedBeatId(info.TimeInBeats(beat.T), beatId));
             }

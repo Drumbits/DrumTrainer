@@ -26,8 +26,13 @@ namespace Drumz.UI.Desktop
             var settings = new GridDrawer.Settings { BeatWidth = 64, FontSize = 20, LineHeight = 24 };
             patternDrawer = new PatternDrawer(pattern, settings, 2);
             playAnalysis = new PlayAnalysisSession(new PlayAnalysisSession.Settings(), pattern);
-            for (var index = 0; index < pattern.Instruments.Count; ++index)
-                instrumentKeys.Add(pattern.Instruments[index].Name.Substring(0, 1), pattern.Instruments[index]);
+            foreach (var sound in pattern.Sounds.Sounds)
+            {
+                char key = sound.Instrument.Name[0];
+                while (instrumentKeys.ContainsKey(key))
+                    ++key;
+                instrumentKeys.Add(key, sound);
+            }
             playAnalysis.NewPlayedBeat += patternDrawer.AddPlayedBeat;
             playAnalysis.PlayedBeatStatusSet += patternDrawer.SetPlayedBeatStatus;
             playAnalysis.Tick += PlayAnalysis_Tick;        
@@ -56,7 +61,7 @@ namespace Drumz.UI.Desktop
         private readonly int bpm;
         private readonly PatternDrawer patternDrawer;
         private readonly PlayAnalysisSession playAnalysis;
-        private readonly IDictionary<string, IInstrumentId> instrumentKeys = new Dictionary<string, IInstrumentId>(StringComparer.OrdinalIgnoreCase);
+        private readonly IDictionary<char, ISoundId> instrumentKeys = new Dictionary<char, ISoundId>();
 
         protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
         {
@@ -100,11 +105,12 @@ namespace Drumz.UI.Desktop
         {
             if (playAnalysis.IsRunning)
             {
-                if (instrumentKeys.TryGetValue(e.KeyChar.ToString(), out IInstrumentId instrument))
+                var key = e.KeyChar.ToString().ToUpper()[0];
+                if (instrumentKeys.TryGetValue(key, out ISoundId sound))
                 {
                     var t = playAnalysis.T;
                     Log?.Invoke(e.KeyChar + ": " + t);
-                    playAnalysis.RegisterPlayedBeat(new Beat(instrument, Velocity.Medium));
+                    playAnalysis.RegisterPlayedBeat(new Beat(sound, Velocity.Medium));
                 }
             }
             base.OnKeyPress(e);

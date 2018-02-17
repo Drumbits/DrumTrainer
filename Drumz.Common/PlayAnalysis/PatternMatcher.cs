@@ -42,9 +42,10 @@ namespace Drumz.Common.PlayAnalysis
             foreach (var matcher in perInstrumentMatchers.Values)
                 matcher.Tick(newTime, resultsCollector);
         }
-        public void AddBeat(IInstrumentId instrumentId, TimedBeatId beat, Velocity v)
+        public void AddBeat(ISoundId sound, TimedBeatId beat, Velocity v)
         {
-            perInstrumentMatchers[instrumentId].AddPlayed(beat, resultsCollector);
+            //todo: pass sound information to matcher
+            perInstrumentMatchers[sound.Instrument].AddPlayed(beat, resultsCollector);
         }
     }
 }

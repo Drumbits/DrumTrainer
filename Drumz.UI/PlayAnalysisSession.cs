@@ -33,7 +33,7 @@ namespace Drumz.UI
         MissedPattern// missed pattern beat
     };
 
-    public delegate void NewPlayedBeatEventHandler(TimedBeatId timedBeat, IInstrumentId instrument);
+    public delegate void NewPlayedBeatEventHandler(TimedBeatId timedBeat, ISoundId sound);
     public delegate void PlayedBeatStatusSetEventHandler(BeatId beatId, BeatStatus status);
     public delegate void MissedPatternBeatEventHandler(TimedBeatId patternBeat);
     public delegate void TickEventHandler(float t);
@@ -122,8 +122,8 @@ namespace Drumz.UI
             {
                 var id = playedBeats.New(beat);
                 var timedBeat = new TimedBeatId(beat.Time, id);
-                NewPlayedBeat?.Invoke(timedBeat, beat.Value.Instrument);
-                matcher.AddBeat(beat.Value.Instrument, timedBeat, beat.Value.Velocity);
+                NewPlayedBeat?.Invoke(timedBeat, beat.Value.Sound);
+                matcher.AddBeat(beat.Value.Sound, timedBeat, beat.Value.Velocity);
             }
         }
         private static BeatStatus MatchStatus(float accuracy)

@@ -16,8 +16,8 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
             builder.SuggestedBpm = 60;
             // SN  --o---o-
             // BS  x---xx--
-            var sn = new SimpleInstrumentId("SN");
-            var bs = new SimpleInstrumentId("BS");
+            var sn = new SimpleSoundId("SN", "default", "*");
+            var bs = new SimpleSoundId("BS", "default", "*");
             var result = new Pattern.Builder();
             result.PatternInfo = builder.Build();
             result.Add(new TimeInUnits(0), bs, Velocity.Medium);
@@ -47,8 +47,8 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
             var pattern = BuildBinaryPattern();
             var matchResults = new MatchResultCollector();
             var matcher = PatternMatcher.Create(pattern, new PatternMatcher.Settings { MaxMatchingTime = 0.25f }, matchResults);
-            var sn = new SimpleInstrumentId("SN");
-            var bs = new SimpleInstrumentId("BS");
+            var sn = new SimpleSoundId("SN", "default", "*");
+            var bs = new SimpleSoundId("BS", "default", "*");
 
             short i = 1;
             matcher.Tick(0f);

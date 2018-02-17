@@ -43,57 +43,57 @@ namespace Drumz.Common.Beats.IO
                 return ToPattern(data);
             }
         }
-        private static InstrumentData ToData(IInstrumentId instrument, int index)
+        private static SoundData ToData(ISoundId sound, SoundsList sounds)
         {
-            return new InstrumentData { Name = instrument.Name, Id = index };
+            return new SoundData { Technique = sound.Technique, Instrument = sound.Instrument.Name, Id = sounds.IndexOf(sound), Mark = sound.Mark };
         }
-        private static BeatData ToData(PatternBeat beat, List<IInstrumentId> instruments)
+        private static BeatData ToData(PatternBeat beat, SoundsList patternSounds)
         {
-            return new BeatData { Time = beat.T.Index, Instrument = instruments.IndexOf(beat.Instrument), Velocity = beat.Velocity.Value };
+            return new BeatData { Time = beat.T.Index, Sound = patternSounds.IndexOf(beat.Sound), Velocity = beat.Velocity.Value };
         }
         public static PatternData ToData(Pattern pattern)
         {
-            var instruments = pattern.Instruments;
             return new PatternData
             {
                 BarsCount = pattern.Info.BarsCount,
                 BeatsPerBar = pattern.Info.BeatsPerBar,
                 TimeUnitsPerBeat = pattern.Info.UnitsPerBeat.Index,
                 SuggestedBpm = pattern.Info.SuggestedBpm,
-                Instruments = pattern.Instruments.Select(ToData).ToArray(),
-                Beats = pattern.AllBeats().Select(b => ToData(b, instruments)).ToArray()
+                Sounds = pattern.Sounds.Sounds.Select(s => ToData(s, pattern.Sounds)).ToArray(),
+                Beats = pattern.AllBeats().Select(b => ToData(b, pattern.Sounds)).ToArray()
             };
         }
         public static Pattern ToPattern(PatternData data)
         {
-            var idToInstrument = new Dictionary<int, IInstrumentId>();
-            foreach (var instrumentData in data.Instruments)
+            var idToSound = new Dictionary<int, ISoundId>();
+            foreach (var soundData in data.Sounds)
             {
-                if (idToInstrument.ContainsKey(instrumentData.Id))
-                    throw new PatternParsingException("Duplicate instrument id: " + instrumentData.Id
+                if (idToSound.ContainsKey(soundData.Id))
+                    throw new PatternParsingException("Duplicate sound id: " + soundData.Id
                         + ". Used by \""
-                        + idToInstrument[instrumentData.Id].Name
+                        + idToSound[soundData.Id].Name()
                         + "\" and \""
-                        + instrumentData.Name
+                        + soundData.Instrument + "." + soundData.Technique
                         + "\"");
-                idToInstrument.Add(instrumentData.Id, new SimpleInstrumentId(instrumentData.Name));
+                idToSound.Add(soundData.Id, new SimpleSoundId(soundData.Instrument, soundData.Technique, soundData.Mark));
             }
-            //var beats = new SortedDictionary<TimeInUnits, Velocity[]>();
-            var builder = new Pattern.Builder(data.Instruments.Select(i => idToInstrument[i.Id]).ToArray());
+            var builder = new Pattern.Builder(data.Sounds.Select(i => idToSound[i.Id]).ToArray());
             int index = 0;
             foreach (var beatData in data.Beats)
             {
                 var t = new TimeInUnits(beatData.Time);
-                IInstrumentId instrument;
-                if (!idToInstrument.TryGetValue(beatData.Instrument, out instrument))
-                    throw new PatternParsingException("Invalid instrument id for beat #" + index + "(t=" + beatData.Time + ", id=" + beatData.Instrument + ")");
-                builder.Add(t, instrument, new Velocity(beatData.Velocity));
+                ISoundId sound;
+                if (!idToSound.TryGetValue(beatData.Sound, out sound))
+                    throw new PatternParsingException("Invalid instrument id for beat #" + index + "(t=" + beatData.Time + ", id=" + beatData.Sound + ")");
+                builder.Add(t, sound, new Velocity(beatData.Velocity));
             }
-            var patternInfo = new PatternInfo.Builder();
-            patternInfo.BarsCount = data.BarsCount;
-            patternInfo.BeatsPerBar = data.BeatsPerBar;
-            patternInfo.SuggestedBpm = data.SuggestedBpm;
-            patternInfo.UnitsPerBeat = new TimeInUnits(data.TimeUnitsPerBeat);
+            var patternInfo = new PatternInfo.Builder
+            {
+                BarsCount = data.BarsCount,
+                BeatsPerBar = data.BeatsPerBar,
+                SuggestedBpm = data.SuggestedBpm,
+                UnitsPerBeat = new TimeInUnits(data.TimeUnitsPerBeat)
+            };
             builder.PatternInfo = patternInfo.Build();
             return builder.Build();
         }

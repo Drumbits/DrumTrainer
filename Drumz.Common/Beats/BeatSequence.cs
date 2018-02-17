@@ -8,17 +8,17 @@ namespace Drumz.Common.Beats
 {
     public class Beat
     {
-        public readonly IInstrumentId Instrument;
+        public readonly ISoundId Sound;
         public readonly Velocity Velocity;
-        public Beat(IInstrumentId instrument, Velocity velocity)
+        public Beat(ISoundId sound, Velocity velocity)
         {
-            this.Instrument = instrument;
+            this.Sound = sound;
             this.Velocity = velocity;
             if (velocity.Value == 0) throw new ArgumentException("Velocity should not be null " + this);
         }
         public override string ToString()
         {
-            return Instrument.Name + ";" + Velocity.Value.ToString("0");
+            return Sound.Name() + ";" + Velocity.Value.ToString("0");
         }
     }
     public interface IBeatSequence
@@ -31,14 +31,14 @@ namespace Drumz.Common.Beats
     }
     public static class BeatSequenceExtensionMethods
     {
-        public static IEnumerable<IInstrumentId> Instruments(this IBeatSequence sq)
+        public static IEnumerable<ISoundId> Instruments(this IBeatSequence sq)
         {
-            return sq.Beats.Select(beat => beat.Value.Instrument).Distinct();
-        }/*
-        public static IEnumerable<double> Times(this IBeatSequence sq)
+            return sq.Beats.Select(beat => beat.Value.Sound).Distinct();
+        }
+        public static IEnumerable<float> Times(this IBeatSequence sq)
         {
             return sq.Beats.Select(beat => beat.Time).Distinct();
-        }*/
+        }
     }
 
     public class BeatSequence : IBeatSequence
@@ -91,14 +91,14 @@ namespace Drumz.Common.Beats
         {
             //private readonly RealInterval span;
             private readonly List<TimedEvent<Beat>> beats = new List<TimedEvent<Beat>>();
-            private readonly List<IInstrumentId> instruments = new List<IInstrumentId>();
+            private readonly List<ISoundId> sounds = new List<ISoundId>();
 
             public BeatSequenceFactory()
             {
             }
             public void AddBeat(float time, Beat beat)
             {
-                if (!instruments.Contains(beat.Instrument)) instruments.Add(beat.Instrument);
+                if (!sounds.Contains(beat.Sound)) sounds.Add(beat.Sound);
                 beats.Add(new TimedEvent<Beat>(time, beat));
             }
             public BeatSequence Build()

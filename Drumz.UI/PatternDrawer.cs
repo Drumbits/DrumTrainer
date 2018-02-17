@@ -15,7 +15,7 @@ namespace Drumz.UI
 
         public PatternDrawer(Pattern pattern, GridDrawer.Settings settings, int subdivisions)
         {
-            this.gridDrawer = new GridDrawer(settings, pattern.Info, subdivisions, pattern.Instruments.ToArray());
+            this.gridDrawer = new GridDrawer(settings, pattern.Info, subdivisions, pattern.Sounds.Instruments.ToArray());
             beatsDrawer = new BeatsDrawer(pattern, gridDrawer);
             summaryDrawer = new SummaryDrawer(gridDrawer, pattern);
         }
@@ -37,9 +37,9 @@ namespace Drumz.UI
             }
         }
         public SKRect GridRect { get { return gridDrawer.GridRect; } }
-        public void AddPlayedBeat(TimedBeatId timedBeat, IInstrumentId instrument)
+        public void AddPlayedBeat(TimedBeatId timedBeat, ISoundId sound)
         {
-            beatsDrawer.AddPlayedBeat(timedBeat, instrument);
+            beatsDrawer.AddPlayedBeat(timedBeat, sound);
         }
         public void SetPlayedBeatStatus(BeatId beatId, BeatStatus status)
         {
