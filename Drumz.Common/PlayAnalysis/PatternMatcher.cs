@@ -6,13 +6,9 @@ namespace Drumz.Common.PlayAnalysis
 {
     public class PatternMatcher
     {
-        public static PatternMatcher Create(Pattern pattern, Settings settings, IMatchResultsCollector matchResultsCollector)
+        public static PatternMatcher Create(Pattern pattern, Settings settings, IMatchResultsCollector resultsCollector)
         {
-            return Create(PatternBeatIds.Create(pattern), pattern.Info, settings, matchResultsCollector);
-        }
-        public static PatternMatcher Create(PatternBeatIds pattern, PatternInfo patternInfo, Settings settings, IMatchResultsCollector resultsCollector)
-        {
-            var patternBeatLists = ContinuousBeatsLooper.FromPattern(pattern, patternInfo).ToDictionary(
+            var patternBeatLists = ContinuousBeatsLooper.FromPattern(pattern).ToDictionary(
                 kv => kv.Key,
                 kv => new SingleInstrumentBeatsMatcher(kv.Key,
                     new PatternBeatsTimesList(
@@ -27,10 +23,10 @@ namespace Drumz.Common.PlayAnalysis
             public float MaxMatchingTime = 0.5f;
         }
         private readonly Settings settings;
-        private readonly Dictionary<int, SingleInstrumentBeatsMatcher> perInstrumentMatchers;
+        private readonly Dictionary<IInstrumentId, SingleInstrumentBeatsMatcher> perInstrumentMatchers;
         private readonly IMatchResultsCollector resultsCollector;
 
-        private PatternMatcher(Settings settings, Dictionary<int, SingleInstrumentBeatsMatcher> perInstrumentMatchers, IMatchResultsCollector resultsCollector)
+        private PatternMatcher(Settings settings, Dictionary<IInstrumentId, SingleInstrumentBeatsMatcher> perInstrumentMatchers, IMatchResultsCollector resultsCollector)
         {
             this.settings = settings;
             this.perInstrumentMatchers = perInstrumentMatchers;
@@ -46,9 +42,9 @@ namespace Drumz.Common.PlayAnalysis
             foreach (var matcher in perInstrumentMatchers.Values)
                 matcher.Tick(newTime, resultsCollector);
         }
-        public void AddBeat(int instrumentIndex, TimedBeat beat, Velocity v)
+        public void AddBeat(IInstrumentId instrumentId, TimedBeatId beat, Velocity v)
         {
-            perInstrumentMatchers[instrumentIndex].AddPlayed(beat, resultsCollector);
+            perInstrumentMatchers[instrumentId].AddPlayed(beat, resultsCollector);
         }
     }
 }

@@ -7,26 +7,26 @@ namespace Drumz.Common.PlayAnalysis
     public class BeatTimesList
     {
         private readonly float keepWindow;
-        private readonly System.Collections.Generic.Queue<TimedBeat> times = new System.Collections.Generic.Queue<TimedBeat>();
+        private readonly System.Collections.Generic.Queue<TimedBeatId> times = new System.Collections.Generic.Queue<TimedBeatId>();
 
         public BeatTimesList(float keepWindow)
         {
             this.keepWindow = keepWindow;
         }
 
-        public void Tick(float time, Action<TimedBeat> discardBeat)
+        public void Tick(float time, Action<TimedBeatId> discardBeat)
         {
             var timeLimit = time - keepWindow;
             while (times.Count > 0 && times.Peek().T < timeLimit)
                 discardBeat(times.Dequeue());
         }
-        public void Add(TimedBeat beat)
+        public void Add(TimedBeatId beat)
         {
             times.Enqueue(beat);
         }
         public bool IsEmpty { get { return times.Count == 0; } }
-        public TimedBeat Next { get { return times.Peek(); } }
-        public TimedBeat RemoveNext()
+        public TimedBeatId Next { get { return times.Peek(); } }
+        public TimedBeatId RemoveNext()
         {
             return times.Dequeue();
         }

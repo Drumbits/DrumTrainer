@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using SkiaSharp;
+using Drumz.Common;
 using Drumz.Common.Beats;
 using Drumz.Common.PlayAnalysis;
 
@@ -14,9 +15,9 @@ namespace Drumz.UI
 
         public PatternDrawer(Pattern pattern, GridDrawer.Settings settings, int subdivisions)
         {
-            this.gridDrawer = new GridDrawer(settings, pattern.Info, subdivisions, pattern.Instruments.Select(i => i.Name).ToArray());
+            this.gridDrawer = new GridDrawer(settings, pattern.Info, subdivisions, pattern.Instruments.ToArray());
             beatsDrawer = new BeatsDrawer(pattern, gridDrawer);
-            summaryDrawer = new SummaryDrawer(gridDrawer, PatternBeatIds.Create(pattern));
+            summaryDrawer = new SummaryDrawer(gridDrawer, pattern);
         }
         public void SetSummary(PerformanceSummary summary)
         {
@@ -36,9 +37,9 @@ namespace Drumz.UI
             }
         }
         public SKRect GridRect { get { return gridDrawer.GridRect; } }
-        public void AddPlayedBeat(TimedBeat timedBeat, int instrumentIndexInPattern)
+        public void AddPlayedBeat(TimedBeatId timedBeat, IInstrumentId instrument)
         {
-            beatsDrawer.AddPlayedBeat(timedBeat, instrumentIndexInPattern);
+            beatsDrawer.AddPlayedBeat(timedBeat, instrument);
         }
         public void SetPlayedBeatStatus(BeatId beatId, BeatStatus status)
         {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Xunit;
+using Drumz.Common.Beats;
 using Drumz.Common.PlayAnalysis;
 
 namespace Drumz.Common.UnitTests.PlayAnalysis
@@ -9,9 +10,9 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
         [Fact]
         public void Test()
         {
-            var b1 = new TimedBeat(0f, new BeatId(1));
-            var b2 = new TimedBeat(0.4f, new BeatId(2));
-            var b3 = new TimedBeat(0.6f, new BeatId(3));
+            var b1 = new TimedBeatId(0f, new BeatId(1));
+            var b2 = new TimedBeatId(0.4f, new BeatId(2));
+            var b3 = new TimedBeatId(0.6f, new BeatId(3));
             var beatTimeList = new BeatTimesList(0.5f);
             beatTimeList.Add(b1);
             beatTimeList.Add(b2);
@@ -19,7 +20,7 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
             Assert.Equal(3, beatTimeList.Count);
             var next = beatTimeList.Next;
             Assert.Equal(b1, beatTimeList.Next);
-            var discarded = new List<TimedBeat>();
+            var discarded = new List<TimedBeatId>();
 
             beatTimeList.Tick(0.6f, discarded.Add);
             Assert.Equal(new [] {b1}, discarded);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Drumz.Common.Beats;
 using Drumz.Common.Utils;
 
 namespace Drumz.Common.PlayAnalysis
@@ -35,12 +36,12 @@ namespace Drumz.Common.PlayAnalysis
     public class PerformanceSummary
     {
         private readonly AccuracySummary[] summaries;
-        public PatternBeatIds Pattern { get; private set; }
+        public Pattern Pattern { get; private set; }
 
-        public PerformanceSummary(PatternBeatIds patternBeats)
+        public PerformanceSummary(Pattern patternBeats)
         {
             this.Pattern = patternBeats;
-            this.summaries = patternBeats.Select(b => new AccuracySummary()).ToArray();
+            this.summaries = patternBeats.Ids.Select(b => new AccuracySummary()).ToArray();
         }
 
         public AccuracySummary BeatSummary(BeatId patternBeatId)

@@ -34,9 +34,9 @@ namespace Drumz.UI
                 patternBeats.Add(coord);
             }
         }
-        public void AddPlayedBeat(TimedBeat timedBeat, int instrumentIndexInPattern)
+        public void AddPlayedBeat(TimedBeatId timedBeat, IInstrumentId instrument)
         {
-            var coord = grid.Coordinates(instrumentIndexInPattern, timedBeat.T);
+            var coord = grid.Coordinates(instrument, timedBeat.T);
             var expiry = timedBeat.T + 0.75f*pattern.Info.TotalBeats;
             var mark = new BeatMark(timedBeat.Id, coord, beatPaints.Paint(BeatStatus.Pending), expiry);
             beatMarks.Enqueue(mark);

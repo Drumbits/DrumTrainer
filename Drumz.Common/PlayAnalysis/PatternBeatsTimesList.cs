@@ -13,7 +13,7 @@ namespace Drumz.Common.PlayAnalysis
             this.patternBeats = patternBeats;
         }
 
-        public void Tick(float time, Action<TimedBeat> discardBeat)
+        public void Tick(float time, Action<TimedBeatId> discardBeat)
         {
             beatsList.Tick(time, discardBeat);
             patternBeats.FillBeatsUntil(time + beatsList.KeepWindow, beatsList);

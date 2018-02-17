@@ -85,6 +85,7 @@ namespace Drumz.UI.Desktop
                 chrono.Stop();
                 fpsCounter.Stop();
                 patternDrawer.SetSummary(playAnalysis.Summary);
+                Invalidate();
                 return;
             }
             playAnalysis.Reset();

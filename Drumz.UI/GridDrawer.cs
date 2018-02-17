@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using SkiaSharp;
+using Drumz.Common;
+using Drumz.Common.Utils;
 using Drumz.Common.Beats;
 using Drumz.Common.PlayAnalysis;
 
@@ -11,9 +13,9 @@ namespace Drumz.UI
     {
         private readonly SKPaint mainPaint = new SKPaint { Color = SKColors.White, TextSize = 12, IsAntialias=true,LcdRenderText=true };
         private readonly IGridCoordinatesProvider gridCoordinates;
-        private readonly PatternBeatIds pattern;
+        private readonly Pattern pattern;
 
-        public SummaryDrawer(IGridCoordinatesProvider gridCoordinates, PatternBeatIds pattern)
+        public SummaryDrawer(IGridCoordinatesProvider gridCoordinates, Pattern pattern)
         {
             this.gridCoordinates = gridCoordinates;
             this.pattern = pattern;
@@ -30,7 +32,7 @@ namespace Drumz.UI
         {
             canvas.Save();
             canvas.Translate(0, gridRect.Height);
-            foreach (var beat in pattern)
+            foreach (var beat in pattern.Ids)
             {
                 var beatInfo = pattern.Beat(beat);
                 var summaryForBeat = summary.BeatSummary(beat);
@@ -59,7 +61,7 @@ namespace Drumz.UI
         private readonly PatternInfo info;
         private readonly Settings settings;
         private readonly int timeUnitWidth;
-        private readonly string[] instrumentNames;
+        private readonly IInstrumentId[] instruments;
         private readonly int subdivisions;
         private readonly GridPaints gridPaints;
         private readonly SKPaint textPaint;
@@ -68,7 +70,7 @@ namespace Drumz.UI
 
         private const int namesToFirstBeatMargin = 20;
 
-        public GridDrawer(Settings settings, PatternInfo patternInfo, int subdivisions, string[] instrumentNames)
+        public GridDrawer(Settings settings, PatternInfo patternInfo, int subdivisions, IInstrumentId[] instruments)
         {
             if (patternInfo.UnitsPerBeat.Index % subdivisions != 0)
                 throw new ArgumentException("Subdivision not compatible with pattern");
@@ -76,7 +78,7 @@ namespace Drumz.UI
             settings.BeatWidth = timeUnitWidth * patternInfo.UnitsPerBeat.Index;
             this.settings = settings;
             this.info = patternInfo;
-            this.instrumentNames = instrumentNames;
+            this.instruments = instruments;
             this.subdivisions = subdivisions;
             this.textPaint = BuildInstrumentNamePaint();
             this.gridRect = BuildGridRect();
@@ -137,9 +139,9 @@ namespace Drumz.UI
         }
         private SKRect BuildGridRect()
         {
-            var instrumentNameAreaWidth = instrumentNames.Max(i => textPaint.MeasureText(i));
+            var instrumentNameAreaWidth = instruments.Max(i => textPaint.MeasureText(i.Name));
             var gridTop = settings.LineHeight + 1;
-            var gridBottom = settings.LineHeight * (instrumentNames.Length) + gridTop;
+            var gridBottom = settings.LineHeight * (instruments.Length) + gridTop;
             var gridLeft = instrumentNameAreaWidth + 20;
             var gridRight = gridLeft + (info.BeatsPerBar * info.BarsCount) * settings.BeatWidth;
             return new SKRect(gridLeft, gridTop, gridRight, gridBottom);
@@ -148,24 +150,38 @@ namespace Drumz.UI
         {
             var upColor = new SKColor(25, 146, 191);
             var downColor = new SKColor(37, 92, 123);
-            var gradient = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(0, 100/*gridRect.Bottom*/), new[] { upColor, downColor }, null, SKShaderTileMode.Clamp);
+            var gradient = SKShader.CreateLinearGradient(new SKPoint(0, 0),
+                new SKPoint(0, 100/*gridRect.Bottom*/), 
+                new[] { upColor, downColor }, null, SKShaderTileMode.Clamp);
             return new SKPaint { Shader = gradient };
         }
         public SKRect GridRect { get { return gridRect; } }
-        public SKPoint Coordinates(int instrumentIndex, TimeInUnits t)
+        public SKPoint Coordinates(IInstrumentId instrument, TimeInUnits t)
         {
+            var instrumentIndex = InstrumentIndex(instrument);
             var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
             var x = gridRect.Left + settings.BeatWidth * t.Index / (float)this.info.UnitsPerBeat.Index;
 
             return new SKPoint(x, y);
         }
-        public SKPoint Coordinates(int instrumentIndex, float timeInBeats)
+        public SKPoint Coordinates(IInstrumentId instrument, float timeInBeats)
         {
+            var instrumentIndex = InstrumentIndex(instrument);
             timeInBeats = RecenterTime(timeInBeats);
             var y = gridRect.Top + (instrumentIndex + 1) * settings.LineHeight;
             var x = gridRect.Left + settings.BeatWidth * timeInBeats;
 
             return new SKPoint(x, y);
+        }
+        private int InstrumentIndex(IInstrumentId instrument)
+        {
+            var instrumentIndex = instruments.IndexOf(instrument);
+            if (instrumentIndex == -1)
+            {
+                Drumz.Common.Diagnostics.Logger.TellF(Common.Diagnostics.Logger.Level.Error, "Instument not in pattern: {0} not in {1}", instrument.Name, instruments.ToNiceString());
+                instrumentIndex = instruments.Length;
+            }
+            return instrumentIndex;
         }
         private float RecenterTime(float t)
         {
@@ -184,10 +200,10 @@ namespace Drumz.UI
             canvas.DrawPaint(backgroundPaint);
             canvas.Restore();
             // drawing horizontal lines
-            for (int i = 0; i < instrumentNames.Length; ++i)
+            for (int i = 0; i < instruments.Length; ++i)
             {
                 float line = gridRect.Top + (i + 1) * settings.LineHeight;
-                canvas.DrawText(instrumentNames[i], 0, line, textPaint);
+                canvas.DrawText(instruments[i].Name, 0, line, textPaint);
                 DrawHorizontalLine(canvas, line);
             }
             int col = (int)gridRect.Left;

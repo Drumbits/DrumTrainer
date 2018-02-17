@@ -5,27 +5,27 @@ namespace Drumz.Common.PlayAnalysis
 {
     public class SingleInstrumentBeatsMatcher
     {
-        private readonly int instrumentIndex;
+        private readonly IInstrumentId instumentId;
         private readonly PatternBeatsTimesList patternBeats;
         private readonly BeatTimesList playedBeats;
         private readonly PatternMatcher.Settings settings;
 
-        public SingleInstrumentBeatsMatcher(int instrumentIndex, PatternBeatsTimesList patternBeats, BeatTimesList playedBeats, PatternMatcher.Settings settings)
+        public SingleInstrumentBeatsMatcher(IInstrumentId instrumentId, PatternBeatsTimesList patternBeats, BeatTimesList playedBeats, PatternMatcher.Settings settings)
         {
-            this.instrumentIndex = instrumentIndex;
+            this.instumentId = instrumentId;
             this.patternBeats = patternBeats;
             this.playedBeats = playedBeats;
             this.settings = settings;
         }
 
-        public void AddPlayed(TimedBeat beat, IMatchResultsCollector results)
+        public void AddPlayed(TimedBeatId beat, IMatchResultsCollector results)
         {
             if (!patternBeats.Beats.IsEmpty)
             {
                 var diff = beat.T - patternBeats.Beats.Next.T;
                 if (Math.Abs(diff) <= settings.MaxMatchingTime)
                 {
-                    var match = new BeatsMatch(instrumentIndex, patternBeats.Beats.RemoveNext(), beat, Accuracy(diff));
+                    var match = new BeatsMatch(patternBeats.Beats.RemoveNext(), beat, Accuracy(diff));
                     results.Match(match);
                     return;
                 }
@@ -46,8 +46,8 @@ namespace Drumz.Common.PlayAnalysis
                     Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Pattern: {0}", patternBeats.Beats.Content.ToNiceString());
                     Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Played: {0}", playedBeats.Content.ToNiceString());
                 }*/
-                patternBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
-                playedBeats.Tick(t, b => results.MissedBeat(new MissedBeat(instrumentIndex, b)));
+                patternBeats.Tick(t, results.MissedBeat);
+                playedBeats.Tick(t, results.MissedBeat);
 
                 LookForMatches(results.Match);
             }
@@ -57,17 +57,13 @@ namespace Drumz.Common.PlayAnalysis
             playedBeats.Clear();
             patternBeats.Reset();
             previousT = 0f;
-            if (instrumentIndex == 2)
-            {
-                Drumz.Common.Diagnostics.Logger.TellF(Diagnostics.Logger.Level.Debug, "Reset");
-            }
         }
         private void LookForMatches(Action<BeatsMatch> matchFound)
         {
             if (patternBeats.Beats.IsEmpty || playedBeats.IsEmpty) return;
             var diff = playedBeats.Next.T - patternBeats.Beats.Next.T;
             if (Math.Abs(diff) > settings.MaxMatchingTime) return;
-            var match = new BeatsMatch(instrumentIndex, patternBeats.Beats.RemoveNext(), playedBeats.RemoveNext(), Accuracy(diff));
+            var match = new BeatsMatch(patternBeats.Beats.RemoveNext(), playedBeats.RemoveNext(), Accuracy(diff));
             matchFound(match);
             LookForMatches(matchFound);
         }

@@ -1,9 +1,9 @@
-﻿namespace Drumz.Common.PlayAnalysis
+﻿namespace Drumz.Common.Beats
 {
     public struct BeatId
     {
-        public short Index;
-        public BeatId(short index) { this.Index = index; }
+        public int Index;
+        public BeatId(int index) { this.Index = index; }
         public bool IsPattern { get { return Index < 0; } }
         public override bool Equals(object obj)
         {

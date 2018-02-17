@@ -3,9 +3,9 @@
     public class MissedBeat
     {
         public readonly int InstrumentIndex;
-        public readonly TimedBeat Beat;
+        public readonly TimedBeatId Beat;
 
-        public MissedBeat(int instrumentIndex, TimedBeat beat)
+        public MissedBeat(int instrumentIndex, TimedBeatId beat)
         {
             InstrumentIndex = instrumentIndex;
             Beat = beat;

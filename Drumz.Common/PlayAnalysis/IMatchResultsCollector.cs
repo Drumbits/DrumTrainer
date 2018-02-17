@@ -3,6 +3,6 @@
     public interface IMatchResultsCollector
     {
         void Match(BeatsMatch match);
-        void MissedBeat(MissedBeat match);
+        void MissedBeat(TimedBeatId beat);
     }
 }

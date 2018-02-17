@@ -34,11 +34,11 @@ namespace Drumz.Common.Beats
         public static IEnumerable<IInstrumentId> Instruments(this IBeatSequence sq)
         {
             return sq.Beats.Select(beat => beat.Value.Instrument).Distinct();
-        }
+        }/*
         public static IEnumerable<double> Times(this IBeatSequence sq)
         {
             return sq.Beats.Select(beat => beat.Time).Distinct();
-        }
+        }*/
     }
 
     public class BeatSequence : IBeatSequence
@@ -96,7 +96,7 @@ namespace Drumz.Common.Beats
             public BeatSequenceFactory()
             {
             }
-            public void AddBeat(double time, Beat beat)
+            public void AddBeat(float time, Beat beat)
             {
                 if (!instruments.Contains(beat.Instrument)) instruments.Add(beat.Instrument);
                 beats.Add(new TimedEvent<Beat>(time, beat));

@@ -1,5 +1,5 @@
 ﻿using SkiaSharp;
-using Drumz.Common.PlayAnalysis;
+using Drumz.Common.Beats;
 
 namespace Drumz.UI
 {

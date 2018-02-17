@@ -6,28 +6,29 @@ namespace Drumz.Common.PlayAnalysis
 {
     public class ContinuousBeatsLooper
     {
-        public static IDictionary<int, ContinuousBeatsLooper> FromPattern(PatternBeatIds pattern, PatternInfo info)
+        public static IDictionary<IInstrumentId, ContinuousBeatsLooper> FromPattern(Pattern pattern)
         {
-            var allBeats = new Dictionary<int, List<TimedBeat>>();
-            foreach (var beatId in pattern)
+            var info = pattern.Info;
+            var allBeats = new Dictionary<IInstrumentId, List<TimedBeatId>>();
+            foreach (var beatId in pattern.Ids)
             {
                 var beat = pattern.Beat(beatId);
-                if (!allBeats.TryGetValue(beat.Instrument, out List<TimedBeat> beatsForInstrument))
+                if (!allBeats.TryGetValue(beat.Instrument, out List<TimedBeatId> beatsForInstrument))
                 {
-                    beatsForInstrument = new List<TimedBeat>();
+                    beatsForInstrument = new List<TimedBeatId>();
                     allBeats.Add(beat.Instrument, beatsForInstrument);
                 }
-                beatsForInstrument.Add(new TimedBeat(info.TimeInBeats(beat.T), beatId));
+                beatsForInstrument.Add(new TimedBeatId(info.TimeInBeats(beat.T), beatId));
             }
             var totalLength = info.BarsCount * info.BeatsPerBar;
             return allBeats.ToDictionary(kv => kv.Key, kv => new ContinuousBeatsLooper(kv.Value.ToArray(), totalLength));
         }
-        private readonly TimedBeat[] onePassBeats;
+        private readonly TimedBeatId[] onePassBeats;
         private readonly float repeatLength;
         private short nextBeatIndex;
         private int currentLoops;
 
-        private ContinuousBeatsLooper(TimedBeat[] onePassBeats, float repeatLength)
+        private ContinuousBeatsLooper(TimedBeatId[] onePassBeats, float repeatLength)
         {
             this.onePassBeats = onePassBeats;
             this.repeatLength = repeatLength;

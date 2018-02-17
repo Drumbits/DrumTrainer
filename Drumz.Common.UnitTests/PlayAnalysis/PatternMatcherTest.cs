@@ -18,24 +18,25 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
             // BS  x---xx--
             var sn = new SimpleInstrumentId("SN");
             var bs = new SimpleInstrumentId("BS");
-            var result = new Pattern(builder.Build(), new IInstrumentId[] {sn, bs });
+            var result = new Pattern.Builder();
+            result.PatternInfo = builder.Build();
             result.Add(new TimeInUnits(0), bs, Velocity.Medium);
             result.Add(new TimeInUnits(4), bs, Velocity.Medium);
             result.Add(new TimeInUnits(5), bs, Velocity.Medium);
             result.Add(new TimeInUnits(3), bs, Velocity.Medium);
             result.Add(new TimeInUnits(7), bs, Velocity.Medium);
-            return result;
+            return result.Build();
         }
         private class MatchResultCollector : IMatchResultsCollector
         {
             public readonly List<BeatsMatch> Matches = new List<BeatsMatch>();
-            public readonly List<MissedBeat> Missed = new List<MissedBeat>();
+            public readonly List<TimedBeatId> Missed = new List<TimedBeatId>();
             public void Match(BeatsMatch match)
             {
                 Matches.Add(match);
             }
 
-            public void MissedBeat(MissedBeat missed)
+            public void MissedBeat(TimedBeatId missed)
             {
                 Missed.Add(missed);
             }
@@ -46,12 +47,12 @@ namespace Drumz.Common.UnitTests.PlayAnalysis
             var pattern = BuildBinaryPattern();
             var matchResults = new MatchResultCollector();
             var matcher = PatternMatcher.Create(pattern, new PatternMatcher.Settings { MaxMatchingTime = 0.25f }, matchResults);
-            var sn = 0;
-            var bs = 1;
+            var sn = new SimpleInstrumentId("SN");
+            var bs = new SimpleInstrumentId("BS");
 
             short i = 1;
             matcher.Tick(0f);
-            var beat = new TimedBeat(0, new BeatId(i++));
+            var beat = new TimedBeatId(0, new BeatId(i++));
             matcher.AddBeat(bs, beat, Velocity.Medium);
             Assert.Single(matchResults.Matches);
 
