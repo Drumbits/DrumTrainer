@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Drumz.Common.Utils;
+using System.Threading;
+using System.Threading.Tasks;
 using Drumz.Common;
 using Drumz.Common.Beats;
 using Drumz.Common.PlayAnalysis;
@@ -55,9 +55,11 @@ namespace Drumz.UI
         private readonly PatternMatcher matcher;
         private readonly float timeUnitInMs;
         private readonly System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-        private bool isRunning = false;
         private PerformanceSummary summary = null;
         private System.Collections.Concurrent.ConcurrentQueue<TimedEvent<Beat>> playedBeatsBuffer = new System.Collections.Concurrent.ConcurrentQueue<TimedEvent<Beat>>();
+        //threading stuff
+        private Task task;
+        private readonly CancellationTokenSource cancelSource = new CancellationTokenSource();
 
         public PlayAnalysisSession(Settings settings, Pattern pattern)
         {
@@ -67,8 +69,8 @@ namespace Drumz.UI
             this.matcher = PatternMatcher.Create(pattern, new PatternMatcher.Settings(), this);
             timeUnitInMs = pattern.Info.SuggestedBpm / 60000f;
         }
-
-        public bool IsRunning { get { return isRunning; } }
+        
+        public bool IsRunning { get { return task != null && !task.IsCompleted; } }
 
         public void RegisterPlayedBeat(Beat beat)
         {
@@ -77,26 +79,25 @@ namespace Drumz.UI
 
         public void Start()
         {
-            isRunning = true;
-            new System.Threading.Thread(Run).Start();
+            var token = cancelSource.Token;
+            task = Task.Factory.StartNew(() => Run(token), token);
         }
-        private void Run()
+        private void Run(CancellationToken cancel)
         {
-            isRunning = true;
             timer.Start();
-            while (isRunning)
+            while (!cancel.IsCancellationRequested)
             {
                 var nextTick = settings.RefreshTimeInMs + timer.ElapsedMilliseconds;
                 FlushBeatsBuffer();
                 matcher.Tick(T);
                 Tick(T);
-                System.Threading.Thread.Sleep((int)Math.Max(0, nextTick - timer.ElapsedMilliseconds));
+                Thread.Sleep((int)Math.Max(0, nextTick - timer.ElapsedMilliseconds));
             }
             timer.Stop();
         }
         public void Stop()
         {
-            isRunning = false;
+            cancelSource.Cancel();
         }
         public float T
         {
