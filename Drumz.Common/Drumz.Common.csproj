@@ -5,4 +5,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Src\Properties\**" />
+    <EmbeddedResource Remove="Src\Properties\**" />
+    <None Remove="Src\Properties\**" />
+  </ItemGroup>
+
 </Project>
